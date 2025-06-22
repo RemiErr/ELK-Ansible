@@ -1,0 +1,21 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /data/realfishdataset.csv
+
+processors:
+  # 處理 CSV 格式
+  - decode_csv_fields:
+      fields:
+        message: csv
+      separator: ","
+      target: csv_data
+      overwrite_keys: true
+
+  # 處理時間戳
+  - drop_fields:
+      fields: ["host", "agent", "input", "ecs", "log", "message"]
+
+output.logstash:
+  hosts: ["logstash:5044"]

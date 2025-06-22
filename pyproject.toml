@@ -1,0 +1,12 @@
+[project]
+name = "elk-ansible"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "ansible>=11.7.0",
+    "joblib>=1.5.1",
+    "requests>=2.32.4",
+    "tqdm>=4.67.1",
+]

@@ -1,0 +1,27 @@
+- name: 透過 docker-compose 部署 ELK + Filebeat
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    compose_file: "{{ playbook_dir }}/docker-compose.yml"
+
+  tasks:
+    - name: Ensure docker-compose is installed
+      ansible.builtin.command: docker-compose version
+      register: compose_version
+      failed_when: compose_version.rc != 0
+      changed_when: false
+
+    - name: Ensuer docker-compose is down
+      ansible.builtin.command: docker-compose -f "{{ compose_file }}" down -v
+      ignore_errors: yes
+
+    - name: Run docker-compose up
+      ansible.builtin.command: docker-compose -f "{{ compose_file }}" up -d
+      register: compose_result
+      failed_when: compose_result.rc != 0
+
+    - name: Display docker-compose result
+      debug:
+        var: compose_result

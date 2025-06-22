@@ -1,0 +1,71 @@
+version: '3.8'
+
+# 使用官方的 ELK images
+# Elasticsearch, Logstash, Kibana, Filebeat
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.0
+    # 容器名稱
+    container_name: elasticsearch
+    # 環境參數
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200" 
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - elk
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.14.0
+    container_name: logstash
+    ports:
+      - "5044:5044"
+    volumes:
+      # 掛載本機 Logstash pipeline
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.14.0
+    container_name: filebeat
+    user: root
+    command: ["sh", "-c", "rm -rf /usr/share/filebeat/filebeat.yml && filebeat -e"]
+    # configs:
+    # - source: fb_config
+    #   target: ./filebeat/filebeat.yml
+    volumes:
+      # 掛載本機 Filebeat 配置
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./dataset:/data:ro
+    networks:
+      - elk
+    depends_on:
+      - logstash
+
+volumes:
+  esdata:
+
+networks:
+  elk:
+    name: elk
+    driver: bridge
