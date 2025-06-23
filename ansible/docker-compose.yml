@@ -11,8 +11,12 @@ services:
     # 環境參數
     environment:
       - discovery.type=single-node
+      - http.host=0.0.0.0
+      - transport.host=0.0.0.0
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.monitoring.enabled=false
+      - cluster.name=elasticsearch
+      - bootstrap.memory_lock=true
     ports:
       - "9200:9200" 
     volumes:
@@ -39,7 +43,8 @@ services:
       - "5044:5044"
     volumes:
       # 掛載本機 Logstash pipeline
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
     networks:
       - elk
     depends_on:
@@ -49,14 +54,18 @@ services:
     image: docker.elastic.co/beats/filebeat:8.14.0
     container_name: filebeat
     user: root
-    command: ["sh", "-c", "rm -rf /usr/share/filebeat/filebeat.yml && filebeat -e"]
+    command: ["filebeat", "-e", "--strict.perms=false"]
     # configs:
     # - source: fb_config
     #   target: ./filebeat/filebeat.yml
     volumes:
       # 掛載本機 Filebeat 配置
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
       - ./dataset:/data:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log/syslog:/var/log/syslog:ro
+      - /var/log/auth.log:/var/log/auth.log:ro
     networks:
       - elk
     depends_on:
